@@ -35,6 +35,45 @@ openstack_suite.context 'using the CPI', position: 2, order: :global, cpi_api: t
       }
       expect(stemcell_cid).to be
     end
+    
+    it 'can attach floating IP to a VM' do
+      stemcell_cid = @resource_tracker.consumes(:stemcell_cid, 'No stemcell to create VM from')
+
+      vm_cid = with_cpi('Floating IP could not be attached.') {
+        @resource_tracker.produce(:servers, provide_as: :vm_cid_with_floating_ip) {
+          @cpi.create_vm(
+            'agent-id',
+            stemcell_cid,
+            @config.default_vm_type_cloud_properties,
+            network_spec_with_floating_ip,
+            [],
+            {}
+          )
+        }
+      }
+
+      vm = @compute.servers.get(vm_cid)
+      vm.wait_for { ready? }
+    end
+
+    it 'can create a VM with static IP' do
+      stemcell_cid = @resource_tracker.consumes(:stemcell_cid, 'No stemcell to create VM from')
+
+      vm_cid_static_ip = with_cpi('VM with static IP could not be created.') {
+        @resource_tracker.produce(:servers, provide_as: :vm_cid_static_ip) {
+          @cpi.create_vm(
+            'agent-id',
+            stemcell_cid,
+            @config.default_vm_type_cloud_properties,
+            network_spec_with_static_ip,
+            [],
+            {}
+          )
+        }
+      }
+
+      expect(vm_cid_static_ip).to be
+    end
 
     it 'can create a VM' do
       stemcell_id = @resource_tracker.consumes(:stemcell_cid, 'No stemcell available')
