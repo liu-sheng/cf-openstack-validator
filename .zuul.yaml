@@ -1,5 +1,4 @@
 - project:
     check:
       jobs:
-        - cf-openstack-validator-validation-test
-#
+        - cf-openstack-validator-acceptance-test
