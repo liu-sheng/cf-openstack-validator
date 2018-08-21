@@ -1,6 +1,7 @@
 require 'fileutils'
+require 'securerandom'
 
-describe 'Cloud Controller using Swift as blobstore' do
+describe 'Cloud Controller using Swift as blobstore', cpi_api: true do
   let(:storage) {
     storage_config = {:openstack_temp_url_key => Validator::Api.configuration.extensions['object_storage']['openstack']['openstack_temp_url_key']}
     Validator::Api::FogOpenStack.storage(storage_config)
@@ -8,15 +9,18 @@ describe 'Cloud Controller using Swift as blobstore' do
 
   before(:all) do
     @resource_tracker = Validator::Api::ResourceTracker.create
+    @validator_dirname = "validator-key-#{SecureRandom.uuid}"
   end
 
   it 'can create a directory' do
     directory_id = Validator::Api::FogOpenStack.with_openstack('Directory could not be created') do
       @resource_tracker.produce(:directories, provide_as: :root) {
-        storage.directories.create({
-            key: 'validator-key',
+        root = storage.directories.create({
+            key: @validator_dirname,
             public: false
-        }).key
+        })
+        wait_for_swift
+        root.key
       }
     end
 
@@ -24,7 +28,7 @@ describe 'Cloud Controller using Swift as blobstore' do
   end
 
   it 'can get a directory' do
-    expect(test_directory.key).to eq('validator-key')
+    expect(test_directory.key).to eq(@validator_dirname)
   end
 
   it 'can upload a blob' do
@@ -38,6 +42,7 @@ describe 'Cloud Controller using Swift as blobstore' do
             content_type: 'text/plain',
             public: false
           })
+          wait_for_swift
           [directory.key, file.key]
         end
       end
@@ -133,6 +138,7 @@ EOT
     Validator::Api::FogOpenStack.with_openstack('Blob could not be copied') do
       @resource_tracker.produce(:files, provide_as: :copied_simple_blob) do
         original_file.copy(root_dir.key, new_file_key)
+        wait_for_swift
         [root_dir.key, new_file_key]
       end
     end
@@ -154,11 +160,17 @@ EOT
     Validator::Api::FogOpenStack.with_openstack('Blob could not be deleted') do
       test_blob.destroy
     end
+    wait_for_swift
 
     deleted_file = Validator::Api::FogOpenStack.with_openstack('Blob could not be downloaded') do
       files.get(file_key)
     end
     expect(deleted_file).to be_nil
+  end
+
+  def wait_for_swift
+    seconds = Validator::Api.configuration.extensions['object_storage']['openstack']['wait_for_swift'] || 5
+    sleep seconds
   end
 
   def test_directory

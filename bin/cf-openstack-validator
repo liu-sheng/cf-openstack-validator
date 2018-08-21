@@ -4,6 +4,7 @@ require 'optparse'
 require_relative '../lib/validator/cli'
 
 cli_options = {}
+working_dir = "#{ENV['HOME']}/.cf-openstack-validator"
 required_options = {stemcell: '--stemcell', config_path: '--config'}
 option_parser = OptionParser.new do |parser|
   parser.banner = 'Usage: cf-openstack-validator [options]'
@@ -39,6 +40,10 @@ option_parser = OptionParser.new do |parser|
 
   parser.on('-f', '--fail-fast', 'Stop execution after the first test failure (optional)') do
     cli_options[:fail_fast] = true
+  end
+
+  parser.on('-w', "--working-dir WORKING_DIR", 'Working directory for running the tests (optional)') do |workdir|
+    cli_options[:working_dir] = workdir
   end
 end
 option_parser.parse!

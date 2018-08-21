@@ -18,6 +18,7 @@ Usage: cf-openstack-validator [options]
     -k, --skip-cleanup               Skip cleanup of OpenStack resources (optional)
     -v, --verbose                    Print more output for failing tests (optional)
     -f, --fail-fast                  Stop execution after the first test failure (optional)
+    -w, --working-dir WORKING_DIR    Working directory for running the tests (optional)
 EOT
 end
 
@@ -37,4 +38,11 @@ describe 'Command Line' do
     expect(stdout).to eq(help_text)
   end
 
+  context 'when all required parameters are given' do
+    it 'returns an error if stemcell and/or config do not exist' do
+      stdout, stderr, exit_code = run_validator('--stemcell invalid-stemcell --config invalid-config')
+      expect(exit_code.exitstatus).to eq(1)
+      expect(stderr).to  include("No such file or directory")
+    end
+  end
 end
