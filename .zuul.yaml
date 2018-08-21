@@ -1,4 +1,8 @@
 - project:
     check:
       jobs:
-        - cf-openstack-validator-acceptance-test
+        - cf-openstack-validator-acceptance-test-mitaka
+        - cf-openstack-validator-acceptance-test-newton
+        - cf-openstack-validator-acceptance-test-ocata
+        - cf-openstack-validator-acceptance-test-pike
+        - cf-openstack-validator-acceptance-test-queens
